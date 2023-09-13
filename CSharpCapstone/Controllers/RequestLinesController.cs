@@ -21,6 +21,23 @@ namespace CSharpCapstone.Controllers
             _context = context;
         }
 
+        //Recalculate Request Total
+        private async Task RecalculateRequestTotal(int requestId)
+        {
+            var total = (from rl in _context.RequestLines
+                         join p in _context.Products
+                            on rl.ProductId equals p.Id
+                         where rl.RequestId == requestId
+                         select new
+                         {
+                             LineTotal = rl.Quantity * p.Price
+                         }).Sum(x => x.LineTotal);
+            var request = await _context.Requests.FindAsync(requestId);
+            request!.Total = total;
+            await _context.SaveChangesAsync();
+        }
+
+
         // GET: api/RequestLines
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RequestLine>>> GetRequestLine()
@@ -29,7 +46,7 @@ namespace CSharpCapstone.Controllers
           {
               return NotFound();
           }
-            return await _context.RequestLines.ToListAsync();
+            return await _context.RequestLines.Include(x => x.Product).ToListAsync();
         }
 
         // GET: api/RequestLines/5
@@ -40,7 +57,7 @@ namespace CSharpCapstone.Controllers
           {
               return NotFound();
           }
-            var requestLine = await _context.RequestLines.FindAsync(id);
+            var requestLine = await _context.RequestLines.Include(x => x.Product).SingleOrDefaultAsync(x => x.Id == id);
 
             if (requestLine == null)
             {
@@ -65,6 +82,7 @@ namespace CSharpCapstone.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                await RecalculateRequestTotal(requestLine.RequestId);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -92,6 +110,7 @@ namespace CSharpCapstone.Controllers
           }
             _context.RequestLines.Add(requestLine);
             await _context.SaveChangesAsync();
+            await RecalculateRequestTotal(requestLine.RequestId);
 
             return CreatedAtAction("GetRequestLine", new { id = requestLine.Id }, requestLine);
         }
@@ -109,9 +128,10 @@ namespace CSharpCapstone.Controllers
             {
                 return NotFound();
             }
-
+            var request = requestLine.RequestId;
             _context.RequestLines.Remove(requestLine);
             await _context.SaveChangesAsync();
+            await RecalculateRequestTotal(request);
 
             return NoContent();
         }

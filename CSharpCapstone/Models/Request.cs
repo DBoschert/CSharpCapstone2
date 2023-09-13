@@ -17,7 +17,7 @@ namespace CSharpCapstone.Models
         [StringLength(10)]
         public string Status { get; set; } = "NEW";
         [Column(TypeName = "decimal(11,2)")]
-        public decimal Total { get; set; } = 0;
+        public decimal Total { get; set; } = 0; //Auto Calculate
         public int UserId { get; set; }
         public virtual User? User { get; set; }
     }

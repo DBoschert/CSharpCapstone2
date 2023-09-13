@@ -21,6 +21,19 @@ namespace CSharpCapstone.Controllers
             _context = context;
         }
 
+        //GET: /api/requests/reviews/{userId}
+        
+        [HttpGet("reviews/{userId}")]
+        public async Task<ActionResult<IEnumerable<Request>>> GetReviewStatus(int userId)
+        {
+            var req = await _context.Requests.Where(x => x.Status == "Review" && x.Id != userId).ToListAsync();
+            if (req == null)
+            {
+                return NotFound();
+            }
+            return req;
+        }
+
         // GET: api/Requests
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Request>>> GetRequest()
@@ -29,7 +42,7 @@ namespace CSharpCapstone.Controllers
           {
               return NotFound();
           }
-            return await _context.Requests.ToListAsync();
+            return await _context.Requests.Include(x => x.User).ToListAsync();
         }
 
         // GET: api/Requests/5
@@ -40,7 +53,7 @@ namespace CSharpCapstone.Controllers
           {
               return NotFound();
           }
-            var request = await _context.Requests.FindAsync(id);
+            var request = await _context.Requests.Include(x => x.User).SingleOrDefaultAsync(x => x.Id == id);
 
             if (request == null)
             {
@@ -48,6 +61,37 @@ namespace CSharpCapstone.Controllers
             }
 
             return request;
+        }
+
+        //PUT: /api/requests/review/5
+        [HttpPut("review/{id}")]
+        public async Task<IActionResult> SetRequestStatusGreater(int id, Request request)
+        {
+            if(request.Total <= 50)
+            {
+                request.Status = "APPROVED";
+                return await PutRequest(id, request);
+            }
+
+            request.Status = "REVIEW";
+            return await PutRequest(id, request);
+
+        }
+
+        //PUT: /api/requests/approve/5
+        [HttpPut("approve/{id}")]
+        public async Task<IActionResult> SetRequestStatusApproved(int id, Request request)
+        {
+            request.Status = "APPROVED";
+            return await PutRequest(id, request);
+        }
+
+        //PUT: /api/requests/reject/5
+        [HttpPut("reject/{id}")]
+        public async Task<IActionResult> SetRequestStatusRejected(int id, Request request)
+        {
+            request.Status = "REJECTED";
+            return await PutRequest(id, request);
         }
 
         // PUT: api/Requests/5
