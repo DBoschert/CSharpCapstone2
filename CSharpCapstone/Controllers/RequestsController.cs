@@ -26,7 +26,7 @@ namespace CSharpCapstone.Controllers
         [HttpGet("reviews/{userId}")]
         public async Task<ActionResult<IEnumerable<Request>>> GetReviewStatus(int userId)
         {
-            var req = await _context.Requests.Where(x => x.Status == "Review" && x.Id != userId).ToListAsync();
+            var req = await _context.Requests.Where(x => x.Status == "Review" && x.UserId != userId).ToListAsync();
             if (req == null)
             {
                 return NotFound();
