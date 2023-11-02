@@ -26,7 +26,7 @@ namespace CSharpCapstone.Controllers
         [HttpGet("reviews/{userId}")]
         public async Task<ActionResult<IEnumerable<Request>>> GetReviewStatus(int userId)
         {
-            var req = await _context.Requests.Where(x => x.Status == "Review" && x.Id != userId).ToListAsync();
+            var req = await _context.Requests.Where(x => x.Status == "Review" && x.UserId != userId).ToListAsync();
             if (req == null)
             {
                 return NotFound();
@@ -53,7 +53,11 @@ namespace CSharpCapstone.Controllers
           {
               return NotFound();
           }
-            var request = await _context.Requests.Include(x => x.User).SingleOrDefaultAsync(x => x.Id == id);
+            var request = await _context.Requests
+                                            .Include(x => x.User)
+                                            .Include(x => x.RequestLines)!
+                                            .ThenInclude(x => x.Product)
+                                            .SingleOrDefaultAsync(x => x.Id == id);
 
             if (request == null)
             {
